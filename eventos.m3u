@@ -1,0 +1,5 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="" tvg-logo="" group-title="Ao vivo",Meu evento principal
+https://SEU-DOMINIO/live/meucanal/index.m3u8
+#EXTINF:-1 tvg-id="" tvg-logo="" group-title="Ao vivo",Palco 2
+https://SEU-DOMINIO/live/palco2/index.m3u8

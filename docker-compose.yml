@@ -1,0 +1,12 @@
+# Servidor de ingestão/retransmissão (rode numa VPS, NÃO no GitHub)
+# OBS -> rtmp://SEU-IP:1935/live/meucanal  =>  HLS em http://SEU-IP:8888/live/meucanal/index.m3u8
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    restart: unless-stopped
+    ports:
+      - "1935:1935"   # RTMP (entrada do OBS)
+      - "8888:8888"   # HLS (saída para a página)
+      - "8889:8889"   # WebRTC (baixa latência, opcional)
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IPTV Live</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>📡 IPTV Live</h1>
+    <form id="playlistForm" class="playlist-form">
+      <select id="playlistSelect" title="Playlists do site"></select>
+      <input id="playlistUrl" type="url" placeholder="URL de uma playlist .m3u / .m3u8" />
+      <button type="submit">Carregar</button>
+      <label class="file-btn">Abrir arquivo<input id="playlistFile" type="file" accept=".m3u,.m3u8,.txt" hidden /></label>
+    </form>
+  </header>
+
+  <main class="layout">
+    <section class="player-area">
+      <div class="player-wrap">
+        <video id="video" controls playsinline autoplay muted></video>
+        <iframe id="embed" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen hidden></iframe>
+        <div id="status" class="status">Escolha um canal ou evento</div>
+      </div>
+      <div class="now-playing">
+        <span id="liveBadge" class="badge live" hidden>● AO VIVO</span>
+        <strong id="nowTitle">—</strong>
+        <button id="favBtn" class="ghost" title="Favoritar">☆</button>
+      </div>
+
+      <h2>Eventos ao vivo</h2>
+      <div id="events" class="events"></div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="filters">
+        <input id="search" type="search" placeholder="Buscar canal…" />
+        <select id="group"><option value="">Todos os grupos</option></select>
+      </div>
+      <ul id="channels" class="channels"></ul>
+    </aside>
+  </main>
+
+  <footer class="foot">Transmita apenas conteúdo que você tem direito de distribuir.</footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "publicos-br",
+    "nome": "Canais públicos (Brasil)",
+    "arquivo": "data/playlists/publicos-br.m3u",
+    "canais": 10
+  },
+  {
+    "id": "eventos",
+    "nome": "Meus eventos ao vivo",
+    "arquivo": "data/playlists/eventos.m3u",
+    "canais": 2
+  },
+  {
+    "id": "demo",
+    "nome": "Streams de teste",
+    "arquivo": "data/playlists/demo.m3u",
+    "canais": 2
+  }
+]

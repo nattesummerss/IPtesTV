@@ -1,0 +1,21 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="TVBrasil.br" tvg-logo="" group-title="Públicos",TV Brasil
+https://tvbrasil-stream.ebc.com.br/index.m3u8
+#EXTINF:-1 tvg-id="CanalGov.br" tvg-logo="" group-title="Públicos",Canal Gov
+https://canalgov-stream.ebc.com.br/index.m3u8
+#EXTINF:-1 tvg-id="CanalEducacao.br" tvg-logo="" group-title="Educação",Canal Educação
+https://canaleducacao-stream.ebc.com.br/index.m3u8
+#EXTINF:-1 tvg-id="CanalLibras.br" tvg-logo="" group-title="Educação",Canal Libras
+https://canallibras-stream.ebc.com.br/mux_video_ts/index-1.m3u8
+#EXTINF:-1 tvg-id="TVCamara.br" tvg-logo="" group-title="Legislativo",TV Câmara
+https://stream3.camara.gov.br/tv1/manifest.m3u8
+#EXTINF:-1 tvg-id="TVCamara2.br" tvg-logo="" group-title="Legislativo",TV Câmara 2
+https://stream3.camara.gov.br/tv2/manifest.m3u8
+#EXTINF:-1 tvg-id="TVCultura.br" tvg-logo="" group-title="Educação",TV Cultura
+https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8
+#EXTINF:-1 tvg-id="CulturaFast.br" tvg-logo="" group-title="Educação",Cultura Fast
+https://fpa-gateway.tvcultura.com.br:8181/memfs/606caef0-a290-413d-9f1f-8fcdb3a73831.m3u8
+#EXTINF:-1 tvg-id="RedeMinas.br" tvg-logo="" group-title="Públicos",Rede Minas
+https://8hzcavccys.zoeweb.tv/redeminas/ngrp:redeminas_all/playlist.m3u8
+#EXTINF:-1 tvg-id="CanalSaude.br" tvg-logo="" group-title="Educação",Canal Saúde (Fiocruz)
+https://arkyvbre1g.zoeweb.tv/fiocruz/fiocruz.stream/playlist.m3u8

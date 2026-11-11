@@ -1,0 +1,15 @@
+# Configuração mínima do MediaMTX
+rtmp: yes
+hls: yes
+hlsAllowOrigin: '*'          # libera CORS para a página no github.io
+hlsVariant: lowLatency
+webrtc: yes
+paths:
+  live/meucanal:
+    publishUser: publicador
+    publishPass: TROQUE_ESTA_SENHA
+    # Retransmissão simultânea (opcional) para YouTube/Twitch:
+    # runOnReady: >
+    #   ffmpeg -i rtmp://localhost:1935/live/meucanal -c copy -f flv
+    #   rtmp://a.rtmp.youtube.com/live2/SUA_CHAVE_YOUTUBE
+    # runOnReadyRestart: yes
