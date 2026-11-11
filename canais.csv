@@ -11,5 +11,8 @@ publicos-br,Rede Minas,Públicos,,https://8hzcavccys.zoeweb.tv/redeminas/ngrp:re
 publicos-br,Canal Saúde (Fiocruz),Educação,,https://arkyvbre1g.zoeweb.tv/fiocruz/fiocruz.stream/playlist.m3u8,CanalSaude.br
 eventos,Meu evento principal,Ao vivo,,https://SEU-DOMINIO/live/meucanal/index.m3u8,
 eventos,Palco 2,Ao vivo,,https://SEU-DOMINIO/live/palco2/index.m3u8,
-demo,Big Buck Bunny (teste),Teste,,https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8,
-demo,Tears of Steel (teste),Teste,,https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8,
+demo,Teste 1 – Apple BipBop,Teste,,https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8,
+demo,Teste 2 – Akamai ao vivo,Teste,,https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8,
+demo,Teste 3 – Sintel (Bitmovin),Teste,,https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8,
+demo,Teste 4 – Big Buck Bunny (Mux),Teste,,https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8,
+demo,Teste 5 – Tears of Steel (Unified),Teste,,https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8,

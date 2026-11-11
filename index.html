@@ -4,8 +4,55 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IPTV Live</title>
-  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+:root { --bg:#0f1115; --panel:#181b22; --line:#262a33; --text:#e8eaf0; --muted:#8a91a0; --accent:#3b82f6; --live:#ef4444; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+button, input, select { font:inherit; color:inherit; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 12px; }
+button { background:var(--accent); border-color:var(--accent); cursor:pointer; }
+button.ghost { background:transparent; border-color:var(--line); }
+.topbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--line); }
+.topbar h1 { font-size:1.3rem; margin:0; }
+.playlist-form { display:flex; gap:8px; flex:1; max-width:720px; }
+.playlist-form input { flex:1; }
+.file-btn { padding:8px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer; white-space:nowrap; }
+.layout { display:grid; grid-template-columns: 1fr 340px; gap:20px; padding:20px; }
+@media (max-width: 900px) { .layout { grid-template-columns:1fr; } }
+.player-wrap { position:relative; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; }
+.player-wrap video, .player-wrap iframe { width:100%; height:100%; border:0; display:block; }
+.status { position:absolute; inset:auto 0 0 0; padding:8px 12px; font-size:.85rem; color:var(--muted); background:linear-gradient(transparent, #000c); pointer-events:none; }
+.status:empty { display:none; }
+.now-playing { display:flex; gap:10px; align-items:center; margin:12px 0 24px; }
+.now-playing strong { flex:1; }
+.badge { font-size:.75rem; font-weight:700; padding:3px 8px; border-radius:999px; }
+.badge.live { background:var(--live); }
+.badge.soon { background:#a16207; }
+.badge.ended { background:#374151; }
+h2 { font-size:1.05rem; margin:0 0 12px; }
+.events { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:12px; }
+.event { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; cursor:pointer; display:flex; flex-direction:column; gap:6px; }
+.event:hover { border-color:var(--accent); }
+.event.ended { opacity:.55; }
+.event small { color:var(--muted); }
+.sidebar { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; max-height:calc(100vh - 120px); display:flex; flex-direction:column; }
+.filters { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+.channels { list-style:none; margin:0; padding:0; overflow:auto; }
+.channels li { display:flex; gap:10px; align-items:center; padding:8px; border-radius:8px; cursor:pointer; }
+.channels li:hover, .channels li.active { background:#232733; }
+.channels img { width:36px; height:36px; object-fit:contain; background:#0005; border-radius:6px; }
+.channels .meta { flex:1; min-width:0; }
+.channels .name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.channels small { color:var(--muted); }
+.foot { text-align:center; color:var(--muted); font-size:.8rem; padding:16px; }
+.proxy { margin-top:8px; border-top:1px solid var(--line); padding-top:8px; font-size:.85rem; }
+.proxy summary { cursor:pointer; color:var(--muted); }
+.proxy form { display:flex; gap:6px; margin:8px 0 4px; }
+.proxy input { flex:1; min-width:0; }
+.proxy small { color:var(--muted); }
+.status { white-space:normal; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/dist/mpegts.min.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -28,6 +75,7 @@
       <div class="now-playing">
         <span id="liveBadge" class="badge live" hidden>● AO VIVO</span>
         <strong id="nowTitle">—</strong>
+        <button id="copyBtn" class="ghost" title="Copiar link para abrir no VLC" hidden>Copiar link</button>
         <button id="favBtn" class="ghost" title="Favoritar">☆</button>
       </div>
 
@@ -41,10 +89,314 @@
         <select id="group"><option value="">Todos os grupos</option></select>
       </div>
       <ul id="channels" class="channels"></ul>
+      <details class="proxy">
+        <summary>⚙ Proxy (CORS / links http)</summary>
+        <form id="proxyForm">
+          <input id="proxyInput" type="url" placeholder="https://seu-proxy.workers.dev" />
+          <button type="submit">Salvar</button>
+        </form>
+        <small>Use quando o canal mostrar erro de CORS ou link http. Veja docs/cors-proxy-worker.js.</small>
+      </details>
     </aside>
   </main>
 
   <footer class="foot">Transmita apenas conteúdo que você tem direito de distribuir.</footer>
-  <script src="assets/app.js"></script>
+  <script id="dados-embutidos" type="application/json">
+{"playlists": [{"id": "publicos-br", "nome": "Canais públicos (Brasil)", "arquivo": "data/playlists/publicos-br.m3u", "canais": 10, "conteudo": "#EXTM3U\n#EXTINF:-1 tvg-id=\"TVBrasil.br\" tvg-logo=\"\" group-title=\"Públicos\",TV Brasil\nhttps://tvbrasil-stream.ebc.com.br/index.m3u8\n#EXTINF:-1 tvg-id=\"CanalGov.br\" tvg-logo=\"\" group-title=\"Públicos\",Canal Gov\nhttps://canalgov-stream.ebc.com.br/index.m3u8\n#EXTINF:-1 tvg-id=\"CanalEducacao.br\" tvg-logo=\"\" group-title=\"Educação\",Canal Educação\nhttps://canaleducacao-stream.ebc.com.br/index.m3u8\n#EXTINF:-1 tvg-id=\"CanalLibras.br\" tvg-logo=\"\" group-title=\"Educação\",Canal Libras\nhttps://canallibras-stream.ebc.com.br/mux_video_ts/index-1.m3u8\n#EXTINF:-1 tvg-id=\"TVCamara.br\" tvg-logo=\"\" group-title=\"Legislativo\",TV Câmara\nhttps://stream3.camara.gov.br/tv1/manifest.m3u8\n#EXTINF:-1 tvg-id=\"TVCamara2.br\" tvg-logo=\"\" group-title=\"Legislativo\",TV Câmara 2\nhttps://stream3.camara.gov.br/tv2/manifest.m3u8\n#EXTINF:-1 tvg-id=\"TVCultura.br\" tvg-logo=\"\" group-title=\"Educação\",TV Cultura\nhttps://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8\n#EXTINF:-1 tvg-id=\"CulturaFast.br\" tvg-logo=\"\" group-title=\"Educação\",Cultura Fast\nhttps://fpa-gateway.tvcultura.com.br:8181/memfs/606caef0-a290-413d-9f1f-8fcdb3a73831.m3u8\n#EXTINF:-1 tvg-id=\"RedeMinas.br\" tvg-logo=\"\" group-title=\"Públicos\",Rede Minas\nhttps://8hzcavccys.zoeweb.tv/redeminas/ngrp:redeminas_all/playlist.m3u8\n#EXTINF:-1 tvg-id=\"CanalSaude.br\" tvg-logo=\"\" group-title=\"Educação\",Canal Saúde (Fiocruz)\nhttps://arkyvbre1g.zoeweb.tv/fiocruz/fiocruz.stream/playlist.m3u8\n"}, {"id": "eventos", "nome": "Meus eventos ao vivo", "arquivo": "data/playlists/eventos.m3u", "canais": 2, "conteudo": "#EXTM3U\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Ao vivo\",Meu evento principal\nhttps://SEU-DOMINIO/live/meucanal/index.m3u8\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Ao vivo\",Palco 2\nhttps://SEU-DOMINIO/live/palco2/index.m3u8\n"}, {"id": "demo", "nome": "Streams de teste", "arquivo": "data/playlists/demo.m3u", "canais": 5, "conteudo": "#EXTM3U\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Teste\",Teste 1 – Apple BipBop\nhttps://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Teste\",Teste 2 – Akamai ao vivo\nhttps://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Teste\",Teste 3 – Sintel (Bitmovin)\nhttps://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Teste\",Teste 4 – Big Buck Bunny (Mux)\nhttps://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8\n#EXTINF:-1 tvg-id=\"\" tvg-logo=\"\" group-title=\"Teste\",Teste 5 – Tears of Steel (Unified)\nhttps://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8\n"}], "events": [{"title": "Evento demo — sempre ao vivo", "description": "Exemplo de evento HLS. Troque pela URL do seu servidor.", "start": "2026-01-01T00:00:00-03:00", "end": "2030-12-31T23:59:00-03:00", "type": "hls", "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"}, {"title": "Retransmissão via YouTube Live", "description": "Use type=youtube e o ID do vídeo/live.", "start": "2026-12-01T20:00:00-03:00", "end": "2026-12-01T22:00:00-03:00", "type": "youtube", "url": "VIDEO_ID_AQUI"}, {"title": "Evento encerrado (exemplo)", "description": "Fica esmaecido após o horário de término.", "start": "2026-10-01T19:00:00-03:00", "end": "2026-10-01T21:00:00-03:00", "type": "hls", "url": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"}]}
+  </script>
+  <script>
+// IPTV Live — player estático para GitHub Pages
+const $ = (s) => document.querySelector(s);
+const video = $('#video'), embed = $('#embed'), statusEl = $('#status');
+let hls = null, channels = [], current = null;
+// Dados embutidos no index.html: permitem abrir o site mesmo sem a pasta data/ (ex.: arquivo local)
+const EMBED = (() => { try { return JSON.parse(document.getElementById('dados-embutidos').textContent); } catch { return {}; } })();
+const embeddedPlaylist = (url) => (EMBED.playlists || []).find((p) => p.arquivo === url);
+const favs = new Set(JSON.parse(localStorage.getItem('iptv:favs') || '[]'));
+
+// ---------- Parser M3U ----------
+function parseM3U(text) {
+  const out = [];
+  let info = null;
+  for (const raw of text.replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith('#EXTINF')) {
+      const attr = (k) => (line.match(new RegExp(k + '="([^"]*)"')) || [])[1] || '';
+      info = { name: line.split(',').slice(1).join(',').trim() || 'Sem nome',
+               logo: attr('tvg-logo'), group: attr('group-title') || 'Outros' };
+    } else if (!line.startsWith('#')) {
+      out.push({ ...(info || { name: line, logo: '', group: 'Outros' }), url: line, type: guessType(line) });
+      info = null;
+    }
+  }
+  return out;
+}
+function guessType(url) {
+  const path = url.split(/[?#]/)[0].toLowerCase();
+  if (/\.m3u8$/.test(path)) return 'hls';
+  if (/\.(mp4|webm|mov)$/.test(path)) return 'mp4';
+  if (/\.(ts|flv)$/.test(path)) return 'ts';
+  return 'auto'; // sem extensão (ex.: listas Xtream): tenta HLS e depois MPEG-TS
+}
+
+// ---------- Proxy opcional (resolve CORS e http:// em site https) ----------
+const getProxy = () => (localStorage.getItem('iptv:proxy') || '').trim().replace(/\/+$/, '');
+const viaProxy = (url) => (getProxy() ? `${getProxy()}/?url=${encodeURIComponent(url)}` : url);
+
+// ---------- Player ----------
+let tsPlayer = null, retries = 0;
+function stop() {
+  if (hls) { hls.destroy(); hls = null; }
+  if (tsPlayer) { try { tsPlayer.destroy(); } catch {} tsPlayer = null; }
+  video.onloadeddata = video.onerror = null;
+  video.pause(); video.removeAttribute('src'); video.load();
+  embed.src = 'about:blank'; embed.hidden = true; video.hidden = false;
+}
+
+function fail(item, reason) {
+  setStatus(`❌ ${reason}`);
+  $('#copyBtn').hidden = false;
+  console.warn('[IPTV]', item.url, reason);
+}
+
+function play(item, { live = false } = {}) {
+  stop();
+  current = item; retries = 0;
+  $('#nowTitle').textContent = item.name || item.title;
+  $('#liveBadge').hidden = !live;
+  $('#favBtn').textContent = favs.has(item.url) ? '★' : '☆';
+  $('#copyBtn').hidden = true;
+  setStatus('Carregando…');
+  document.querySelectorAll('.channels li').forEach((li) => li.classList.toggle('active', li.dataset.url === item.url));
+
+  if (item.type === 'youtube' || item.type === 'iframe') {
+    video.hidden = true; embed.hidden = false;
+    embed.src = item.type === 'youtube'
+      ? `https://www.youtube.com/embed/${encodeURIComponent(item.url)}?autoplay=1&mute=1`
+      : item.url;
+    setStatus('');
+    return;
+  }
+  // Navegador bloqueia http:// dentro de página https:// (mixed content)
+  if (location.protocol === 'https:' && /^http:\/\//i.test(item.url) && !getProxy()) {
+    return fail(item, 'Link http:// é bloqueado pelo navegador em sites https (github.io). Configure o proxy (⚙) ou use um link https.');
+  }
+  const url = viaProxy(item.url);
+  const type = item.type || guessType(item.url);
+  if (type === 'ts') return playTs(item, url);
+  if (type === 'mp4') return playNative(item, url);
+  playHls(item, url, type === 'auto');
+}
+
+function playHls(item, url, canFallback) {
+  if (!(window.Hls && Hls.isSupported())) return playNative(item, url);
+  hls = new Hls({ lowLatencyMode: true, liveSyncDurationCount: 3, manifestLoadingMaxRetry: 1 });
+  hls.loadSource(url);
+  hls.attachMedia(video);
+  hls.on(Hls.Events.MANIFEST_PARSED, () => { setStatus(''); video.play().catch(() => {}); });
+  hls.on(Hls.Events.ERROR, (_, d) => {
+    if (!d.fatal) return;
+    const manifestErr = /manifest/i.test(d.details || '');
+    if (manifestErr && canFallback) { hls.destroy(); hls = null; return playTs(item, url); }
+    if (manifestErr) {
+      const code = d.response && d.response.code;
+      if (code) return fail(item, `Servidor respondeu ${code} — canal offline ou link expirado.`);
+      // Player nativo do navegador (Edge/Chrome recentes, Safari) não exige CORS
+      if (canNativeHls()) { hls.destroy(); hls = null; return playNative(item, url, () => diagnose(item, url)); }
+      return diagnose(item, url);
+    }
+    if (d.type === Hls.ErrorTypes.MEDIA_ERROR && retries++ < 2) return hls.recoverMediaError();
+    if (d.type === Hls.ErrorTypes.NETWORK_ERROR && retries++ < 3) { setStatus(`Reconectando (${retries}/3)…`); return hls.startLoad(); }
+    fail(item, 'Transmissão interrompida ou formato não suportado pelo navegador.');
+  });
+}
+
+// Descobre por que o stream não abriu: sem internet, rede bloqueando ou servidor sem CORS
+async function diagnose(item, url) {
+  setStatus('Verificando a conexão…');
+  if (!navigator.onLine) return fail(item, 'Sem conexão com a internet.');
+  const host = new URL(url, location.href).host;
+  try {
+    await fetch(url, { mode: 'no-cors', cache: 'no-store' });
+  } catch {
+    return fail(item, `Não foi possível conectar a ${host}. Sua rede (firewall da empresa, VPN, antivírus ou bloqueador) pode estar bloqueando, ou o servidor está fora do ar. Teste em outra rede (ex.: 4G).`);
+  }
+  fail(item, `${host} está no ar, mas não permite tocar em outro site (CORS). Configure o proxy (⚙) ou toque no VLC (Copiar link).`);
+}
+
+function playTs(item, url) {
+  if (!(window.mpegts && mpegts.getFeatureList().mseLivePlayback)) {
+    return fail(item, 'Este navegador não toca streams MPEG-TS. Use Chrome/Edge/Firefox no computador ou o VLC.');
+  }
+  const isFlv = /\.flv(\?|$)/i.test(item.url);
+  tsPlayer = mpegts.createPlayer({ type: isFlv ? 'flv' : 'mpegts', isLive: true, url },
+                                 { enableWorker: true, liveBufferLatencyChasing: true });
+  tsPlayer.attachMediaElement(video);
+  tsPlayer.on(mpegts.Events.ERROR, (type, detail) => {
+    if (type === 'NetworkError') return diagnose(item, url);
+    fail(item, `Formato não suportado (${detail}).`);
+  });
+  video.onloadeddata = () => setStatus('');
+  tsPlayer.load();
+  video.play().catch(() => {});
+}
+
+const canNativeHls = () => !!video.canPlayType('application/vnd.apple.mpegurl');
+function playNative(item, url, onFail) {
+  setStatus('Tentando o player nativo do navegador…');
+  video.src = url; // HLS nativo (Safari, Edge/Chrome recentes) ou MP4
+  video.onloadeddata = () => setStatus('');
+  video.onerror = () => (onFail ? onFail() : fail(item, 'O navegador não conseguiu abrir este link (offline, CORS ou formato).'));
+  video.play().catch(() => {});
+}
+const setStatus = (t) => (statusEl.textContent = t);
+
+// ---------- Lista de canais ----------
+function renderChannels() {
+  const q = $('#search').value.toLowerCase(), g = $('#group').value;
+  const list = channels
+    .filter((c) => (!g || c.group === g) && c.name.toLowerCase().includes(q))
+    .sort((a, b) => favs.has(b.url) - favs.has(a.url));
+  const ul = $('#channels');
+  ul.replaceChildren(...list.map((c) => {
+    const li = document.createElement('li');
+    li.dataset.url = c.url;
+    if (current && current.url === c.url) li.classList.add('active');
+    const img = document.createElement('img');
+    img.alt = ''; img.src = c.logo || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text x="12" y="17" font-size="14" text-anchor="middle" fill="#888">📺</text></svg>');
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const name = document.createElement('div'); name.className = 'name';
+    name.textContent = (favs.has(c.url) ? '★ ' : '') + c.name;
+    const grp = document.createElement('small'); grp.textContent = c.group;
+    meta.append(name, grp); li.append(img, meta);
+    li.onclick = () => play(c);
+    return li;
+  }));
+  if (!list.length) ul.innerHTML = '<li><small>Nenhum canal.</small></li>';
+}
+
+function setChannels(list) {
+  channels = list;
+  const groups = [...new Set(list.map((c) => c.group))].sort();
+  $('#group').replaceChildren(new Option('Todos os grupos', ''), ...groups.map((g) => new Option(g, g)));
+  renderChannels();
+}
+
+async function loadPlaylist(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    setChannels(parseM3U(await res.text()));
+  } catch (e) {
+    const emb = embeddedPlaylist(url);
+    if (emb) return setChannels(parseM3U(emb.conteudo));
+    setStatus(`Falha ao carregar playlist (${e.message}). Verifique a URL e o CORS.`);
+  }
+}
+
+// ---------- Eventos ao vivo ----------
+let events = [];
+function eventState(ev, now = Date.now()) {
+  const s = Date.parse(ev.start), e = Date.parse(ev.end);
+  return now < s ? 'soon' : now > e ? 'ended' : 'live';
+}
+function fmt(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(t / 86400);
+  const h = String(Math.floor(t % 86400 / 3600)).padStart(2, '0'), m = String(Math.floor(t % 3600 / 60)).padStart(2, '0'), s = String(t % 60).padStart(2, '0');
+  return (d ? d + 'd ' : '') + `${h}:${m}:${s}`;
+}
+function renderEvents() {
+  const order = { live: 0, soon: 1, ended: 2 };
+  const box = $('#events');
+  box.replaceChildren(...events
+    .map((ev) => ({ ev, st: eventState(ev) }))
+    .sort((a, b) => order[a.st] - order[b.st] || Date.parse(a.ev.start) - Date.parse(b.ev.start))
+    .map(({ ev, st }) => {
+      const div = document.createElement('div');
+      div.className = 'event ' + st;
+      const label = { live: '● AO VIVO', soon: 'Começa em ' + fmt(Date.parse(ev.start) - Date.now()), ended: 'Encerrado' }[st];
+      const badge = document.createElement('span'); badge.className = 'badge ' + st; badge.textContent = label;
+      const title = document.createElement('strong'); title.textContent = ev.title;
+      const desc = document.createElement('small'); desc.textContent = ev.description || '';
+      const when = document.createElement('small'); when.textContent = new Date(ev.start).toLocaleString('pt-BR');
+      div.append(badge, title, desc, when);
+      div.onclick = () => st === 'soon'
+        ? setStatus(`"${ev.title}" começa em ${fmt(Date.parse(ev.start) - Date.now())}`)
+        : play({ name: ev.title, url: ev.url, type: ev.type || 'hls' }, { live: st === 'live' });
+      return div;
+    }));
+}
+async function loadEvents() {
+  try { events = await (await fetch('data/events.json', { cache: 'no-store' })).json(); }
+  catch { events = EMBED.events || []; }
+  renderEvents();
+}
+
+// ---------- UI ----------
+$('#search').oninput = renderChannels;
+$('#group').onchange = renderChannels;
+$('#playlistForm').onsubmit = (e) => {
+  e.preventDefault();
+  const url = $('#playlistUrl').value.trim();
+  if (url) { localStorage.setItem('iptv:playlist', url); loadPlaylist(url); }
+};
+$('#playlistFile').onchange = async (e) => {
+  const f = e.target.files[0];
+  if (f) setChannels(parseM3U(await f.text()));
+};
+$('#favBtn').onclick = () => {
+  if (!current) return;
+  favs.has(current.url) ? favs.delete(current.url) : favs.add(current.url);
+  localStorage.setItem('iptv:favs', JSON.stringify([...favs]));
+  $('#favBtn').textContent = favs.has(current.url) ? '★' : '☆';
+  renderChannels();
+};
+
+$('#copyBtn').onclick = async () => {
+  if (!current) return;
+  try { await navigator.clipboard.writeText(current.url); setStatus('Link copiado. No VLC: Mídia → Abrir fluxo de rede → colar.'); }
+  catch { prompt('Copie o link:', current.url); }
+};
+$('#proxyInput').value = getProxy();
+$('#proxyForm').onsubmit = (e) => {
+  e.preventDefault();
+  localStorage.setItem('iptv:proxy', $('#proxyInput').value.trim());
+  setStatus(getProxy() ? 'Proxy salvo.' : 'Proxy removido.');
+  if (current) play(current);
+};
+
+// ---------- Playlists do site (data/playlists.json) ----------
+async function loadPlaylistIndex() {
+  let list = [];
+  try { list = await (await fetch('data/playlists.json', { cache: 'no-store' })).json(); }
+  catch { list = EMBED.playlists || []; }
+  const sel = $('#playlistSelect');
+  sel.replaceChildren(...list.map((p) => new Option(`${p.nome} (${p.canais})`, p.arquivo)));
+  sel.hidden = !list.length;
+  return list;
+}
+$('#playlistSelect').onchange = (e) => {
+  localStorage.setItem('iptv:playlist', e.target.value);
+  $('#playlistUrl').value = '';
+  loadPlaylist(e.target.value);
+};
+
+// ?play=URL abre um stream direto; ?playlist=URL carrega outra lista
+const params = new URLSearchParams(location.search);
+(async () => {
+  const index = await loadPlaylistIndex();
+  const saved = localStorage.getItem('iptv:playlist');
+  const start = params.get('playlist') || saved || (index[0] && index[0].arquivo);
+  if (!start) return;
+  if (index.some((p) => p.arquivo === start)) $('#playlistSelect').value = start;
+  else $('#playlistUrl').value = start;
+  loadPlaylist(start);
+})();
+loadEvents();
+setInterval(renderEvents, 1000);
+setInterval(loadEvents, 60000);
+if (params.get('play')) play({ name: 'Stream compartilhado', url: params.get('play'), type: params.get('type') || 'hls' }, { live: true });
+  </script>
 </body>
 </html>

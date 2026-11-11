@@ -2,6 +2,8 @@
 
 Página estática (GitHub Pages) para assistir canais IPTV (playlists M3U/HLS) e eventos ao vivo com agenda.
 
+> **Importante:** extraia o zip antes de abrir. O `index.html` já contém o visual, o código e uma cópia das playlists, então funciona até sozinho. No GitHub, envie **todas** as pastas (`data/`, `tools/`, `docs/`, `.github/`).
+
 ## Recursos
 - Player HLS (hls.js) com reconexão automática; HLS nativo no Safari/iOS; MP4.
 - Várias playlists M3U do repositório (`data/playlists/`), por URL ou por upload de arquivo.
@@ -24,7 +26,7 @@ As playlists são geradas a partir de **`data/canais.csv`**, que pode ser editad
 
 Depois de editar:
 ```bash
-python tools/gerar_playlists.py            # gera .m3u e data/playlists.json
+python tools/gerar_playlists.py            # gera .m3u, data/playlists.json e atualiza o index.html
 python tools/gerar_playlists.py --checar   # também testa se os streams respondem
 git add data && git commit -m "Atualiza playlists" && git push
 ```
@@ -34,6 +36,20 @@ Playlists incluídas:
 - **publicos-br**: canais públicos com stream oficial do próprio canal (EBC, Câmara, Cultura, Rede Minas, Fiocruz).
 - **eventos**: modelo para os seus streams (troque `SEU-DOMINIO`).
 - **demo**: streams de teste para validar o player.
+
+## Canal não reproduz? (solução de problemas)
+A mensagem abaixo do vídeo mostra o motivo:
+
+| Mensagem | Causa | Solução |
+|---|---|---|
+| Link http:// é bloqueado… | O site está em https (github.io) e o stream em http | Use o link https do canal ou configure o proxy (⚙) |
+| Servidor não permite tocar em outro site (CORS)… | O servidor do canal só aceita players próprios ou apps como VLC | Configure o proxy (⚙) ou toque no VLC (botão **Copiar link**) |
+| Servidor respondeu 403/404 | Canal offline, link expirado ou bloqueado por região | Atualize o link |
+| Navegador não toca MPEG-TS | iPhone/iPad não suportam `.ts` no navegador | Use computador/Android ou VLC |
+
+**Formatos suportados:** HLS (`.m3u8`), MPEG-TS (`.ts` e links sem extensão, via mpegts.js), FLV e MP4.
+
+**Proxy (opcional):** `docs/cors-proxy-worker.js` é um Cloudflare Worker gratuito que resolve CORS e links http. As instruções estão no topo do arquivo. Libere só os hosts que você usa (`ALLOWED_HOSTS`) e só o seu site (`ALLOWED_ORIGIN`).
 
 ## Publicar no GitHub
 1. Crie um repositório (ex.: `iptv-live`) e envie estes arquivos:

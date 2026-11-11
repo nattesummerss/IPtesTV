@@ -5,7 +5,7 @@ Uso:
   python tools/gerar_playlists.py            # gera os arquivos
   python tools/gerar_playlists.py --checar   # também testa se cada stream responde
 """
-import csv, json, sys, urllib.request
+import csv, json, re, sys, urllib.request
 from collections import OrderedDict
 from pathlib import Path
 
@@ -59,6 +59,24 @@ def main():
         print(f"{pl}.m3u: {len(rows)} canais")
     (ROOT / "data" / "playlists.json").write_text(json.dumps(indice, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("data/playlists.json atualizado")
+    embutir(indice)
+
+def embutir(indice):
+    """Copia playlists e eventos para dentro do index.html (funciona mesmo sem a pasta data/)."""
+    html_path = ROOT / "index.html"
+    eventos_path = ROOT / "data" / "events.json"
+    dados = {
+        "playlists": [{**p, "conteudo": (ROOT / p["arquivo"]).read_text(encoding="utf-8")} for p in indice],
+        "events": json.loads(eventos_path.read_text(encoding="utf-8")) if eventos_path.exists() else [],
+    }
+    js = json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
+    html = html_path.read_text(encoding="utf-8")
+    novo, n = re.subn(r'(<script id="dados-embutidos" type="application/json">).*?(</script>)',
+                      lambda m: m.group(1) + "\n" + js + "\n  " + m.group(2), html, count=1, flags=re.S)
+    if not n:
+        print("aviso: bloco dados-embutidos não encontrado no index.html"); return
+    html_path.write_text(novo, encoding="utf-8")
+    print("index.html: dados embutidos atualizados")
 
 if __name__ == "__main__":
     main()
